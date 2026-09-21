@@ -6,3 +6,4 @@
 | 002 | [002-enforce-docker-only-repository-execution.md](002-enforce-docker-only-repository-execution.md) | Enforce Docker-only repository execution | Open |
 | 003 | [003-add-a-go-companion-cli-as-the-host-boundary.md](003-add-a-go-companion-cli-as-the-host-boundary.md) | Add a Go companion CLI as the host boundary | Open |
 | 004 | [004-implement-make-q1-as-the-docker-only-verification-gate.md](004-implement-make-q1-as-the-docker-only-verification-gate.md) | Implement make-q1 as the Docker-only verification gate | Open |
+| 005 | [005-add-a-podman-based-mounted-directory-agent-runner.md](005-add-a-podman-based-mounted-directory-agent-runner.md) | Add a Podman-based mounted-directory agent runner | Open |
