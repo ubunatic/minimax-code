@@ -1,3 +1,7 @@
+<!-- harnez:begin Local Overlays -->
+- Local ephemeral overrides: @AGENTS.local.md
+<!-- harnez:end Local Overlays -->
+
 # Agent guide
 
 This repository is the reviewed public projection of an internal monorepo, not an ordinary workspace. Every published file is listed in `release/public-source.json`, and upstream changes arrive through a three-way merge described in `docs/source-sync.md`. Moving or renaming files therefore has a cost that a normal repository does not have: it shows up as a conflict or an unreviewed new file at the next synchronization. Prefer changing content over changing layout.
@@ -63,3 +67,73 @@ Source export reads committed `HEAD` and rejects uncommitted tracked changes. Du
 ## Boundaries
 
 Do not reference internal hosts, generated IDL, or private services; `check:source` catches known patterns but does not replace publication review. Do not restore paths listed in `scripts/lib/retired-sources.mjs` or remove supported capabilities to make standalone checks pass. Do not commit account data, sessions, logs, credentials, or real user content; use temporary data directories and synthetic test inputs. Documentation and commit messages are written in English; preserve the required languages of localized product strings and bundled runtime prompts. See `CONTRIBUTING.md`.
+<!-- harnez:begin Harnez Managed Conventions -->
+## Harnez Managed Conventions
+
+Managed by harnez — local edits here are overwritten on the next `harnez init`.
+Put project-specific rules outside this block.
+
+### Editing Discipline
+- Prefer structured patch tools (`apply_patch`) or whole-block replacements over
+  narrow string substitution edits.
+- When making multi-line edits, ensure sufficient surrounding context lines to
+  avoid ambiguous pattern matches.
+- **Reading & Context Discipline (Recommended for Large Files)**: Prefer
+  `harnez read -I <file>` (dense visual PNG context card) or
+  `harnez read -L <range>` / `harnez read -n` for medium/large files (>100 lines)
+  to preserve token quota and prevent context fatigue. Native reads remain valid
+  for targeted inspection; hook-level blocking is conditional on the active
+  `reading_discipline.enforce` mode in `~/.harnez/config.yaml` (or
+  `HARNEZ_READ_ENFORCE`).
+
+### Issue Tracker Discovery (harnez find)
+Applies when this project has an `issues/` tracker. To search existing issues,
+compute the next ticket number, or allocate one, use `harnez find` / `harnez issues`
+instead of `ls issues/`, `find`, or raw grep:
+- `harnez find -d <repo> issues -a status:open` — list active open issues (use `-I` for visual overview PNG card)
+- `harnez find -d <repo> issues "<query>"` — fuzzy search across titles and body text (use `-I` for visual overview)
+- `harnez issues show -d <repo> <n> -I` — render single issue as styled visual PNG card (inspect via `view_file`)
+- `harnez find -d <repo> issues next` — report the next free ticket number (read-only)
+- `harnez issues new -d <repo> "<title>"` — atomically reserve that number and create
+  a placeholder ticket file; write the ticket to the printed path
+- `harnez issues <verb> -d <repo> <n> [reason]` — change a ticket's status, resync
+  `issues/README.md`, and commit, in one call
+- `harnez index -d <repo>` — update `issues/README.md` after filing or updating tickets
+- Commit documentation and `issues/*.md` changes immediately; don't batch them behind
+  pending code work.
+
+### Agentic Loop Invariants
+Where `@docs/AgenticLoop.md` is present in this project, follow it rather than
+restating it here — in particular Invariant 1 (Parallel Read, Sequential Write:
+one writer per workspace), Invariant 3 (Zero Zombie Guarantee: track and terminate
+every background task and subagent), Invariant 6 (Context Discipline: no whole-file
+reads of AGENTS.md/CLAUDE.md — grep or range-bounded reads), and Invariant 10
+(Media & Demo Verification Gate: explicit user confirmation before publishing
+recordings or screenshots).
+<!-- harnez:end Harnez Managed Conventions -->
+<!-- harnez:begin Language Conventions -->
+Adhere to the following conventions.
+
+Docs in `./docs/` are managed by harnez. <!-- harnez:bundled -->
+
+- Issue Tracking Practices @docs/IssueTracking.md,
+  P0-P3 priorities, metadata headers (Status, Priority, Severity, Category), tracker sync
+- Agentic Loop Practices @docs/AgenticLoop.md,
+  5-phase loop (Advisory -> Dev -> Review -> Hygiene -> Retro), zero zombie guarantee
+- Canary-first development @docs/Canary.md,
+  probe external mechanisms before building features on them
+- Git @docs/Git.md,
+  conventional commits, work on the default branch, don't push unless asked
+- Markdown @docs/Markdown.md,
+  PascalCase for evergreens, kebab-case for ephemeral docs; ASCII art in chat, Mermaid only in docs/
+- Spec system @docs/Spec.md,
+  YAML spec files as single source of truth; Go code must not duplicate spec values
+<!-- harnez:end Language Conventions -->
+<!-- harnez:begin Quota-1 Guardrails -->
+## Quota-1 Guardrails
+
+- **Single-Test Boundary**: Under Quota-1 rules, the agent may only run the test suite once per step/turn.
+- **Code Modification Required**: If tests fail or complete, you MUST modify repository source files before running tests again. Repeated test runs without intermediate code modifications are blocked.
+- **Enforced Test Target**: Execute tests via `make test-q1` (or `harnez exec --quota-1 -- <test-cmd>`).
+- **Unauthorized Bypass Forbidden**: Bypassing guardrails via `QUOTA_BYPASS=1` or `HARNEZ_QUOTA_BYPASS=1` is strictly reserved for human developers and CI environments. Agent loops must not set or pass bypass flags.
+<!-- harnez:end Quota-1 Guardrails -->
