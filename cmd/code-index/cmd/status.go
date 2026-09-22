@@ -90,7 +90,7 @@ var statusCmd = &cobra.Command{
 }
 
 func showGitStatus() {
-	// Try to get untracked files from git
+	// Try to get status from git
 	cmd := exec.Command("git", "status", "--porcelain", "--untracked-files=all")
 	output, err := cmd.Output()
 	if err != nil {
@@ -107,18 +107,26 @@ func showGitStatus() {
 		if line == "" {
 			continue
 		}
+		if len(line) < 2 {
+			continue
+		}
+
 		status := line[:2]
-		if status[0] == '?' {
+		if status[0] == '?' && status[1] == '?' {
 			untracked++
-		} else if status[0] == 'M' || status[1] == 'M' {
-			modified++
-		} else if status[0] != ' ' {
-			staged++
+		} else {
+			// First char is staged status, second is modified status
+			if status[0] != ' ' {
+				staged++
+			}
+			if status[1] != ' ' {
+				modified++
+			}
 		}
 	}
 
-	fmt.Printf("  Modified files: %d\n", modified)
 	fmt.Printf("  Staged changes:  %d\n", staged)
+	fmt.Printf("  Modified files:  %d\n", modified)
 	fmt.Printf("  Untracked items: %d\n", untracked)
 }
 

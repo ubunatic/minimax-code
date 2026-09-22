@@ -129,18 +129,14 @@ func scoreMatch(text, pattern string) int {
 	}
 
 	// Fuzzy match using edit distance (for typos and partial matches)
-	// Only consider if pattern length > 2 to avoid too many false positives
-	if len(pattern) > 2 && len(text) > 2 {
+	// Only consider if pattern length >= 4 to avoid too many false positives
+	if len(pattern) >= 4 && len(text) >= 4 {
 		distance := levenshteinDistance(text, pattern)
-		// Allow more edits for longer patterns
-		// Use ceil division: (len(pattern) + 1) / 2 to allow ~50% edits
-		maxDistance := (len(pattern) + 1) / 2
-		if maxDistance < 2 {
-			maxDistance = 2
-		}
-		if distance <= maxDistance {
-			// Score based on how close the match is, higher for better matches
-			score := 50 - (distance * 5)
+		// Allow up to 2 edits for reasonable typo matching
+		if distance > 0 && distance <= 2 {
+			// Score based on how close the match is
+			// 1 edit = 30-35 pts, 2 edits = 20-25 pts
+			score := 35 - (distance * 8)
 			return max(15, score)
 		}
 	}
@@ -218,12 +214,13 @@ func FilterEntries(entries []Entry, pathFilter, categoryFilter, searchFilter, ty
 			searchScore := scoreMatch(e.Summary, searchFilter)
 			if searchScore == 0 {
 				// Try matching individual words in summary for better fuzzy matching
+				bestWordScore := 0
 				for _, word := range strings.Fields(e.Summary) {
-					if wordScore := scoreMatch(word, searchFilter); wordScore > 0 {
-						searchScore = max(searchScore, wordScore)
-						break
+					if wordScore := scoreMatch(word, searchFilter); wordScore > bestWordScore {
+						bestWordScore = wordScore
 					}
 				}
+				searchScore = bestWordScore
 			}
 			if searchScore > 0 {
 				score += searchScore

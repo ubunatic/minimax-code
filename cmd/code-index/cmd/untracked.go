@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -10,8 +11,9 @@ import (
 )
 
 var (
-	untrackedRoot   string
-	untrackedIgnore string
+	untrackedRoot      string
+	untrackedIgnore    string
+	untrackedGitStatus bool
 )
 
 var untrackedCmd = &cobra.Command{
@@ -27,6 +29,11 @@ Ignores:
   - Specified ignore patterns`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// If --git is set, show git-untracked items instead
+		if untrackedGitStatus {
+			return showGitUntrackedItems()
+		}
+
 		entries, err := LoadIndex()
 		if err != nil {
 			return err
@@ -81,11 +88,11 @@ Ignores:
 		}
 
 		if len(entries_to_add) == 0 {
-			fmt.Println("✓ No untracked directories/files found")
+			fmt.Println("✓ No untracked directories/files found (not in index)")
 			return nil
 		}
 
-		fmt.Printf("\n📁 Found %d untracked entries:\n", len(entries_to_add))
+		fmt.Printf("\n📁 Found %d entries not in index:\n", len(entries_to_add))
 		fmt.Println("───────────────────────────────────────────────────────")
 		for _, path := range entries_to_add {
 			fi, _ := os.Stat(filepath.Join(root, path))
@@ -96,11 +103,52 @@ Ignores:
 			fmt.Printf("%s  %s\n", typeStr, path)
 		}
 
-		fmt.Println("\nTo add these, run:")
+		fmt.Println("\nTo add these to the index, run:")
 		fmt.Println("  code-index extend")
 		fmt.Println()
 		return nil
 	},
+}
+
+func showGitUntrackedItems() error {
+	// Get untracked items from git
+	cmd := exec.Command("git", "status", "--porcelain", "--untracked-files=all")
+	output, err := cmd.Output()
+	if err != nil {
+		return fmt.Errorf("git status failed: %w", err)
+	}
+
+	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+	var untracked []string
+
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+		// ?? = untracked files/dirs
+		if strings.HasPrefix(line, "??") {
+			path := strings.TrimSpace(line[3:])
+			untracked = append(untracked, path)
+		}
+	}
+
+	if len(untracked) == 0 {
+		fmt.Println("✓ No git-untracked items found")
+		return nil
+	}
+
+	fmt.Printf("\n📁 Found %d git-untracked items:\n", len(untracked))
+	fmt.Println("───────────────────────────────────────────────────────")
+	for _, path := range untracked {
+		fi, _ := os.Stat(path)
+		typeStr := "📄"
+		if fi != nil && fi.IsDir() {
+			typeStr = "📁"
+		}
+		fmt.Printf("%s  %s\n", typeStr, path)
+	}
+	fmt.Println()
+	return nil
 }
 
 func findUntracked(root string, indexed, ignore map[string]bool) ([]string, error) {
@@ -135,4 +183,5 @@ func init() {
 	rootCmd.AddCommand(untrackedCmd)
 	untrackedCmd.Flags().StringVarP(&untrackedRoot, "root", "r", ".", "Repository root directory")
 	untrackedCmd.Flags().StringVar(&untrackedIgnore, "ignore", "", "Additional comma-separated ignore patterns")
+	untrackedCmd.Flags().BoolVar(&untrackedGitStatus, "git", false, "Show git-untracked items (instead of index-untracked)")
 }
