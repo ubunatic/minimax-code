@@ -8,3 +8,4 @@
 | 004 | [004-implement-make-q1-as-the-docker-only-verification-gate.md](004-implement-make-q1-as-the-docker-only-verification-gate.md) | Implement make-q1 as the Docker-only verification gate | Open |
 | 005 | [005-add-a-podman-based-mounted-directory-agent-runner.md](005-add-a-podman-based-mounted-directory-agent-runner.md) | Add a Podman-based mounted-directory agent runner | Open |
 | 006 | [006-extend-code-index-for-file-symbol-level-live-search.md](006-extend-code-index-for-file-symbol-level-live-search.md) | Extend code-index for file/symbol-level, live search | Open |
+| 007 | [007-code-index-fix-multi-word-search-and-signal-empty-vs-unindexed-results.md](007-code-index-fix-multi-word-search-and-signal-empty-vs-unindexed-results.md) | code-index: fix multi-word search and signal empty-vs-unindexed results | Open |
