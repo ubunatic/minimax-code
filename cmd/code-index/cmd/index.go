@@ -155,6 +155,8 @@ func max(a, b int) int {
 // scoreMultiWord handles multi-word queries by matching against individual query words
 // Returns highest score from any matching query word (OR semantics)
 // Multi-word queries match if ANY word in the query matches the text
+// Note: OR semantics with substring matching can match short words against substrings
+// (e.g., "the" matches "gather" via substring), a precision trade-off vs. query recall
 func scoreMultiWord(text, filter string) int {
 	queryWords := strings.Fields(filter)
 	if len(queryWords) == 0 {
