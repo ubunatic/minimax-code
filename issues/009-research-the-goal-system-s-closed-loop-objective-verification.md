@@ -1,6 +1,6 @@
 # 009 — Research: the Goal system's closed-loop objective verification
 
-**Status**: Open
+**Status**: Closed — Resolved
 **Priority**: P3
 **Severity**: Minor
 **Category**: Documentation
@@ -49,3 +49,27 @@ not explored.
 ## Notes
 
 Exploratory/documentation task, not a bug fix.
+
+## Implementation
+
+Wrote `docs/explore2/GoalVerification.md`, covering:
+
+- The `ThreadGoalStatus` lifecycle (types.ts) and the three owners of state
+  transitions (model proposal, user REST surface, system accounting).
+- Both `VerifierPort` backends — `subagent` (cross-referenced to
+  `docs/explore/AgentDelegation.md` rather than re-derived) and the
+  previously-undocumented `evaluator` adapter
+  (`verification/evaluator-adapter.ts`), plus `verification-policy.ts`'s
+  route-derived selection between them and `none`.
+- The real `notMetStreak` breaker logic in
+  `packages/local-runtime/src/thread-goal/store-verification.ts`
+  (`normalizeVerificationResult` / `recordThreadGoalVerification`), which
+  `subagent.ts`'s doc comment references but does not implement.
+- The independent `noProgressStreak` / `noToolStreak` breakers in
+  `packages/local-runtime/src/thread-goal/breaker.ts` and
+  `store-breaker.ts`, and the separate five-turn scheduled terminal audit in
+  `reminder-policy.ts` (`GOAL_TERMINAL_AUDIT_INTERVAL = 5`).
+- How all of this surfaces to the user: the `thread_goal.updated` /
+  `GlobalThreadGoal` event and the TUI goal banner
+  (`packages/tui/src/tui/features/goal/banner.ts`), versus the finer-grained
+  internal `goal.*` runtime event stream.
