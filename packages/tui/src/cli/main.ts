@@ -81,6 +81,12 @@ export interface RunTuiCliDependencies {
 export async function runTuiCli(dependencies: RunTuiCliDependencies = {}): Promise<void> {
   const processRef = dependencies.processRef ?? process;
   processRef.title = MINIMAX_CODE_PROCESS_TITLE;
+  // Privacy-first defaults: preserve an explicit caller override, including an
+  // explicit empty value, while making the shipped CLI opt out of telemetry by
+  // default. Users who intentionally enable telemetry can unset these variables
+  // before launching and opt in through config.telemetry.
+  processRef.env.MCODE_DISABLE_TELEMETRY ??= '1';
+  processRef.env.DO_NOT_TRACK ??= '1';
   const resumeDraftAfterLogin = consumeLoginRestartHandoff(processRef.env);
   const supportsNodeVersion =
     dependencies.supportsNodeVersion ?? ((version: string) => supportsTuiNodeVersion(version));

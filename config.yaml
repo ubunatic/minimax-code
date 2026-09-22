@@ -1,0 +1,3 @@
+# Harnez command execution settings for this repository.
+exec:
+  timeout: 2h

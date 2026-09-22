@@ -1,0 +1,17 @@
+.git
+.gitignore
+.env
+.env.*
+.npmrc
+.pnpm-store
+node_modules
+dist
+coverage
+.cache
+.codex
+.claude
+.config
+.local
+**/*token*
+**/*credential*
+**/*secret*
