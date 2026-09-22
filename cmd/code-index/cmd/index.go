@@ -152,6 +152,39 @@ func max(a, b int) int {
 	return b
 }
 
+// scoreMultiWord handles multi-word queries by matching against individual query words
+// Returns highest score from any matching query word (OR semantics)
+// Multi-word queries match if ANY word in the query matches the text
+func scoreMultiWord(text, filter string) int {
+	queryWords := strings.Fields(filter)
+	if len(queryWords) == 0 {
+		return 0
+	}
+
+	// For single-word queries, match against the full text
+	if len(queryWords) == 1 {
+		return scoreMatch(text, queryWords[0])
+	}
+
+	// For multi-word queries: use OR semantics
+	// Return the best score from any query word matching the text
+	maxScore := 0
+	for _, queryWord := range queryWords {
+		// Try matching the query word against full text
+		if score := scoreMatch(text, queryWord); score > maxScore {
+			maxScore = score
+		}
+		// Also try individual words in the text for better fuzzy matching
+		for _, textWord := range strings.Fields(text) {
+			if score := scoreMatch(textWord, queryWord); score > maxScore {
+				maxScore = score
+			}
+		}
+	}
+
+	return maxScore
+}
+
 // scoreCategory checks if category matches any word in filter (OR mode)
 // Returns highest score from any matching word
 func scoreCategory(text, filter string) int {
@@ -211,26 +244,16 @@ func FilterEntries(entries []Entry, pathFilter, categoryFilter, searchFilter, ty
 
 		// Search filter with fuzzy matching on summary and keywords
 		if searchFilter != "" {
-			searchScore := scoreMatch(e.Summary, searchFilter)
+			searchScore := scoreMultiWord(e.Summary, searchFilter)
 			if searchScore == 0 {
-				// Try matching individual words in summary for better fuzzy matching
-				bestWordScore := 0
-				for _, word := range strings.Fields(e.Summary) {
-					if wordScore := scoreMatch(word, searchFilter); wordScore > bestWordScore {
-						bestWordScore = wordScore
-					}
-				}
-				searchScore = bestWordScore
-			}
-			if searchScore > 0 {
-				score += searchScore
-			} else {
 				// Also check path for matches
-				if pathScore := scoreMatch(e.Path, searchFilter); pathScore > 0 {
+				if pathScore := scoreMultiWord(e.Path, searchFilter); pathScore > 0 {
 					score += pathScore / 2 // Lower priority for path matches
 				} else {
 					continue
 				}
+			} else {
+				score += searchScore
 			}
 		}
 

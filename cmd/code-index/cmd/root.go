@@ -71,7 +71,7 @@ Examples:
 		results := FilterEntries(entries, pathFilter, categoryFilter, searchFilter, typeFilter)
 
 		if len(results) == 0 {
-			fmt.Println("No matches found")
+			fmt.Printf("0 matches against %d indexed entries\n", len(entries))
 			return nil
 		}
 
