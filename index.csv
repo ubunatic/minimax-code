@@ -76,3 +76,4 @@ file,packages/agent-modules/permission/src/index.ts,permissions,api-exports,"Per
 file,packages/agent-modules/goal/src/index.ts,session-management,continuation-logic,"Goal and session continuation type exports"
 file,packages/agent-extension/src/index.ts,host-adapters,spi-interface,"Extension SPI interface and adapter registration"
 file,packages/local-runtime-v2/src/index.ts,runtime-host-v2,api-exports,"V2 runtime implementation and host API"
+file,docs/ManPages.md,cli-tooling,"documentation; packaging","Pattern for generating and installing roff man pages from Cobra CLIs"
