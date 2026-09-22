@@ -1,6 +1,6 @@
 # 008 — Research: how the permission/approval system enforces agent autonomy boundaries
 
-**Status**: Open
+**Status**: Closed — Resolved
 **Priority**: P3
 **Severity**: Minor
 **Category**: Documentation
@@ -50,3 +50,36 @@ Exploratory/documentation task, not a bug fix. Use `code-index` as a first
 pass per the established workflow, expect to need direct `ls`/`grep`
 fallback for parts the index doesn't surface (see
 `docs/studies/CodeIndexEffectiveness.md`).
+
+## Implementation
+
+Wrote `docs/explore2/PermissionSystem.md`. Key findings:
+
+- The tool-list ceiling (`canonical-tool-policy.ts`) and the permission
+  engine (`packages/agent-modules/permission`) are two independent
+  mechanisms: the ceiling statically hides tools per subagent role at
+  list-construction time; the engine dynamically judges every call to a
+  tool that *is* visible, based on parsed arguments.
+- Classification is per-call, not per-tool: `bash-checker.ts` parses the
+  actual command (unwrapping `bash -c`, heredocs, wrappers) against
+  `HARD_BLOCKED_REGISTRY`/`SOFT_RISK_REGISTRY`; `fs-checker.ts` resolves the
+  real path per invocation. The same tool name can land on either side of
+  the boundary depending on arguments (e.g. `cat README.md` vs.
+  `cat ~/.ssh/id_rsa`).
+- The precedence (deny > bypass-immune ask > mode/bypass > rule allow >
+  default) is enforced in `permission-core.ts::reducePermissionDecision` /
+  `engine.ts::checkPermission`, with `isBypassPermissions` checked only
+  after all bypass-immune branches have had a chance to return — so hard
+  blocks are structurally unreachable by "always allow" mode, not just
+  documented as such.
+- Enforcement actually gates execution in
+  `LocalPermissionFacade.checkPermission`
+  (`packages/local-runtime/src/permissions/facade.ts`): a `deny` verdict
+  never reaches `ExecutionPlan` construction, so nothing downstream can run
+  the tool.
+- Prompt-injection angle: `auto` mode's cloud classifier receives recent
+  tool call/result text via `conversation-renderer.ts`, so untrusted tool
+  output can influence its verdict — but `reducePermissionClassifierDecision`
+  restricts the classifier to refining an existing `ask` into `allow`/`deny`;
+  it can never override a deterministic `allow`/`deny` Core already reached,
+  bounding how much an injected instruction can achieve.
