@@ -122,6 +122,8 @@ Docs in `./docs/` are managed by harnez. <!-- harnez:bundled -->
   5-phase loop (Advisory -> Dev -> Review -> Hygiene -> Retro), zero zombie guarantee
 - Canary-first development @docs/Canary.md,
   probe external mechanisms before building features on them
+- Code Exploration @docs/CodeIndexGuide.md,
+  use `code-index` CLI for fast repository navigation without grepping
 - Git @docs/Git.md,
   conventional commits, work on the default branch, don't push unless asked
 - Markdown @docs/Markdown.md,
