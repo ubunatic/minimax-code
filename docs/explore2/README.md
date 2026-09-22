@@ -218,6 +218,29 @@ with open('docs/explore2/index.csv') as f:
             print(row['path'])
 ```
 
+## Exploration Write-ups
+
+Findings from using this index (and direct reading) to study specific
+subsystems. Read `HarnessEfficiency.md` first — it synthesizes the rest.
+
+- **HarnessEfficiency.md** — synthesis: the five structural properties that
+  make this harness efficient, one per doc below.
+- **TokenReduction.md** — automatic context compaction, per-call token
+  budgets, role-scoped tool lists, bounded verifier evidence.
+- **ToolCallGuidance.md** — tolerant argument normalization, output
+  continuation protocol, workspace path boundary, anti-repolling hints.
+- **PermissionSystem.md** — static tool-ceiling vs. dynamic per-call
+  permission engine, decision precedence, the `auto`-mode injection angle.
+- **GoalVerification.md** — the Goal state machine, `VerifierPort` backends,
+  `notMetStreak`/no-progress breakers, the five-turn terminal audit.
+- **SystemReminders.md** — the reminder-provider registry, compaction
+  interaction, `trust="untrusted_data"` conventions.
+- **../explore/AgentDelegation.md** — subagent role scoping and the
+  verifier-subagent verdict mapping (predates this directory).
+- **../studies/CodeIndexEffectiveness.md** — retrospective on this index
+  tool itself: where keyword search helped vs. missed, feeding issues #006
+  and #007.
+
 ## Related Documents
 
 - **CodeMap.md** — Narrative guide with relationships and context
