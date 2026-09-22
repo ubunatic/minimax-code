@@ -156,6 +156,33 @@ code-index extend      # Shows format and workflow
 # Verify: code-index -p "your-new-path"
 ```
 
+## Adding New Categories
+
+Discover missing coverage, then add entries:
+
+```bash
+# 1. Find gaps
+code-index untracked              # Files not in index
+code-index status | head -5       # Low-coverage areas
+
+# 2. Add to index.csv (repo root)
+echo 'file,packages/foo/src/bar.ts,new-category,"related-concept","Brief summary"' >> index.csv
+
+# 3. Rebuild & verify
+make install
+code-index -c "new-category"      # See new entries
+code-index -C | grep new-category # Check count
+
+# 4. Commit
+git add index.csv
+git commit -m "docs: add new-category entries"
+```
+
+**Format:**
+- `primary_category` — Main responsibility (kebab-case, single word)
+- `secondary_categories` — Semicolon-separated related concerns
+- `summary` — One line, quoted if contains commas
+
 ## Limitations & Workarounds
 
 | Issue | Workaround |
