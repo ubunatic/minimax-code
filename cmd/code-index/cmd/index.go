@@ -6,6 +6,7 @@ import (
 	"io"
 	"sort"
 	"strings"
+	"unicode/utf8"
 )
 
 //go:embed data.csv
@@ -51,8 +52,52 @@ func LoadIndex() ([]Entry, error) {
 	return entries, nil
 }
 
+// levenshteinDistance computes the edit distance between two strings
+func levenshteinDistance(a, b string) int {
+	a, b = strings.ToLower(a), strings.ToLower(b)
+	lenA, lenB := utf8.RuneCountInString(a), utf8.RuneCountInString(b)
+
+	if lenA == 0 {
+		return lenB
+	}
+	if lenB == 0 {
+		return lenA
+	}
+
+	aRunes := []rune(a)
+	bRunes := []rune(b)
+
+	prev := make([]int, lenB+1)
+	for j := 0; j <= lenB; j++ {
+		prev[j] = j
+	}
+
+	for i := 1; i <= lenA; i++ {
+		curr := make([]int, lenB+1)
+		curr[0] = i
+
+		for j := 1; j <= lenB; j++ {
+			cost := 0
+			if aRunes[i-1] != bRunes[j-1] {
+				cost = 1
+			}
+			curr[j] = min(curr[j-1]+1, min(prev[j]+1, prev[j-1]+cost))
+		}
+		prev = curr
+	}
+
+	return prev[lenB]
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 // scoreMatch returns a relevance score (0-100) for how well pattern matches text
-// Higher scores = better match. Used for OR mode where multiple words are treated separately
+// Higher scores = better match. Supports fuzzy matching, substrings, and typos.
 func scoreMatch(text, pattern string) int {
 	text = strings.ToLower(text)
 	pattern = strings.ToLower(pattern)
@@ -83,8 +128,32 @@ func scoreMatch(text, pattern string) int {
 		return 75
 	}
 
+	// Fuzzy match using edit distance (for typos and partial matches)
+	// Only consider if pattern length > 2 to avoid too many false positives
+	if len(pattern) > 2 && len(text) > 2 {
+		distance := levenshteinDistance(text, pattern)
+		// Allow more edits for longer patterns
+		// Use ceil division: (len(pattern) + 1) / 2 to allow ~50% edits
+		maxDistance := (len(pattern) + 1) / 2
+		if maxDistance < 2 {
+			maxDistance = 2
+		}
+		if distance <= maxDistance {
+			// Score based on how close the match is, higher for better matches
+			score := 50 - (distance * 5)
+			return max(15, score)
+		}
+	}
+
 	// No match
 	return 0
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
 
 // scoreCategory checks if category matches any word in filter (OR mode)
@@ -144,9 +213,28 @@ func FilterEntries(entries []Entry, pathFilter, categoryFilter, searchFilter, ty
 			}
 		}
 
-		// Search filter (case-insensitive)
-		if searchFilter != "" && !strings.Contains(strings.ToLower(e.Summary), strings.ToLower(searchFilter)) {
-			continue
+		// Search filter with fuzzy matching on summary and keywords
+		if searchFilter != "" {
+			searchScore := scoreMatch(e.Summary, searchFilter)
+			if searchScore == 0 {
+				// Try matching individual words in summary for better fuzzy matching
+				for _, word := range strings.Fields(e.Summary) {
+					if wordScore := scoreMatch(word, searchFilter); wordScore > 0 {
+						searchScore = max(searchScore, wordScore)
+						break
+					}
+				}
+			}
+			if searchScore > 0 {
+				score += searchScore
+			} else {
+				// Also check path for matches
+				if pathScore := scoreMatch(e.Path, searchFilter); pathScore > 0 {
+					score += pathScore / 2 // Lower priority for path matches
+				} else {
+					continue
+				}
+			}
 		}
 
 		results = append(results, scoredEntry{e, score})

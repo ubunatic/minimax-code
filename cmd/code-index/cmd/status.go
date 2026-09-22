@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"os/exec"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -77,9 +79,47 @@ var statusCmd = &cobra.Command{
 			fmt.Printf("  %-30s : %2d entries\n", sorted[i].name, sorted[i].count)
 		}
 
+		// Show git status info
+		fmt.Println("\nGit Status:")
+		fmt.Println("───────────")
+		showGitStatus()
+
 		fmt.Println()
 		return nil
 	},
+}
+
+func showGitStatus() {
+	// Try to get untracked files from git
+	cmd := exec.Command("git", "status", "--porcelain", "--untracked-files=all")
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Println("  (git status unavailable)")
+		return
+	}
+
+	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+	untracked := 0
+	modified := 0
+	staged := 0
+
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+		status := line[:2]
+		if status[0] == '?' {
+			untracked++
+		} else if status[0] == 'M' || status[1] == 'M' {
+			modified++
+		} else if status[0] != ' ' {
+			staged++
+		}
+	}
+
+	fmt.Printf("  Modified files: %d\n", modified)
+	fmt.Printf("  Staged changes:  %d\n", staged)
+	fmt.Printf("  Untracked items: %d\n", untracked)
 }
 
 func init() {
