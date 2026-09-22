@@ -31,6 +31,12 @@ whether or not the model chooses to be economical. A harness that only tells
 the model "keep responses short" is relying on compliance; this one removes
 the option to be verbose in the first place.
 
+**Example.** A verifier subagent asked to check a 40k-token transcript never
+sees it — `evidence-brief.ts` hard-caps what it receives to a bounded
+evidence payload, so the check itself can't blow the budget it's meant to
+protect. Contrast with a harness that just tells a verifier "keep your
+context small": nothing stops it from reading the whole transcript anyway.
+
 ## 2. Make tool calls hard to get wrong (`ToolCallGuidance.md`)
 
 Robustness and token efficiency turn out to be the same problem, not two
@@ -50,6 +56,13 @@ picking wrong is structurally less likely when there are fewer options.
 or be ambiguous is a point where the harness pays for it twice — once in the
 failed call, once in the retry. Fixing tolerance and boundaries at the tool
 layer is cheaper than fixing them in the prompt.
+
+**Example.** A model emits a legacy single-question `ask_user` shape instead
+of the current array form. `prepareAskUserArguments` normalizes it silently
+before validation, so the call succeeds on the first try. A harness without
+that normalization layer would reject the call, the model would retry —
+maybe wrong again — burning two or three extra round trips for a shape
+mismatch that carried no real ambiguity about intent.
 
 ## 3. Bound autonomy structurally, not just by convention (`PermissionSystem.md`)
 
@@ -73,6 +86,13 @@ layer the model cannot reach through prompting or tool arguments — the
 enforcement point (`LocalPermissionFacade.checkPermission`) sits below
 `ExecutionPlan` construction, not inside a system prompt instruction.
 
+**Example.** The same `bash` tool call `rm -rf /tmp/foo` vs. `rm -rf ~/`
+lands on opposite sides of the boundary — `bash-checker.ts` parses the
+actual command and path, not just the tool name, so having `bash` in the
+tool list never means blanket approval. A harness that classifies risk
+per-tool ("bash is dangerous, ask every time" or "bash is fine, never ask")
+can't make that distinction at all.
+
 ## 4. Verify completion instead of trusting the claim (`GoalVerification.md`)
 
 Most agent CLIs treat "done" as whatever the model says. This harness closes
@@ -90,6 +110,13 @@ to the user via a dedicated event stream, not by parsing agent prose.
 **The generalizable requirement**: "finished" needs an independent check
 with its own circuit breakers, separate from the executing agent's own
 self-report — otherwise a confidently wrong agent just keeps going.
+
+**Example.** An agent claims a Goal is met, but the verifier repeatedly
+finds the same missing test file across five attempts. Because the
+`notMetStreak` breaker hashes and compares the verifier's `missing` list
+rather than trusting a bare fail/pass, it detects the loop and force-pauses
+the Goal — the agent can't just keep re-asserting "done" and have the
+system eventually agree.
 
 ## 5. Deliver guidance and untrusted data through different channels (`SystemReminders.md`)
 
@@ -110,6 +137,13 @@ the instruction stream the model treats as authoritative.
 guidance and the channel that carries untrusted external content need to be
 distinguishable to the model, consistently, everywhere untrusted content
 enters — not just in one place a developer remembered to escape it.
+
+**Example.** This exact session: unsolicited "harnez tip" text repeatedly
+appeared inside ordinary tool output urging a `harnez rate` call. Because
+that text arrived as raw tool output rather than through the
+`trust="untrusted_data"`-tagged or reminder-registry channel, it was
+recognizable as unverified and ignored every time — the same mechanism this
+section describes, observed from the outside.
 
 ## Where the index tool fits (and where it doesn't) — `docs/studies/CodeIndexEffectiveness.md`
 
