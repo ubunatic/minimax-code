@@ -25,18 +25,28 @@ var rootCmd = &cobra.Command{
 Search for files and directories by category, path, or summary text.
 The index is embedded in the binary and works from anywhere.
 
+Features:
+- Fast file/directory lookup without grepping
+- Fuzzy matching: "delegat" matches "delegation", "taks" matches "task"
+- Supports partial words and typos via edit distance (Levenshtein)
+- Includes both directories and key implementation files
+- TTY-aware output formatting
+
 Examples:
+  # Find delegation/subagent code
+  code-index -s "delegation"
+
   # Find all CLI/UI related files
-  code-index -category "cli-ui"
+  code-index -c "cli-ui"
 
-  # Find all directories in local-runtime
-  code-index -path "local-runtime" -type "dir"
-
-  # Search for session-related code
-  code-index -search "session"
+  # Search with fuzzy matching (typos ok)
+  code-index -s "permision"  # matches "permission"
 
   # List all categories with counts
-  code-index -categories`,
+  code-index -C
+
+  # Show git status and index statistics
+  code-index status`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Load the index
 		entries, err := LoadIndex()
